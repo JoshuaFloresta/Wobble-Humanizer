@@ -1,0 +1,103 @@
+/**
+ * Metrics assembly.
+ *
+ * One place that turns text into the metrics object the UI renders, and one
+ * place that computes before/after deltas. Keeping this together guarantees
+ * the "before" and "after" columns are always produced by identical code.
+ */
+
+import { computeReadability } from '../nlp/readability.js';
+import { analyzeTone } from '../nlp/tone.js';
+import { diffWords, diffStats } from './diff.js';
+
+/**
+ * @param {string} text
+ * @returns {object} readability + tone metrics for one piece of text
+ */
+export function measure(text) {
+  const readability = computeReadability(text);
+  const tone = analyzeTone(text);
+  return {
+    readability,
+    tone,
+    empty: Boolean(readability.empty),
+  };
+}
+
+/** Signed change between two metric snapshots, for the delta chips. */
+export function delta(before, after) {
+  if (before.empty || after.empty) return null;
+
+  const scoreDelta = (key) => round(
+    after.readability.scores[key].value - before.readability.scores[key].value,
+  );
+  const toneDelta = (key) => round(
+    after.tone.metrics[key].value - before.tone.metrics[key].value,
+  );
+
+  return {
+    readability: {
+      fleschReadingEase: scoreDelta('fleschReadingEase'),
+      fleschKincaidGrade: scoreDelta('fleschKincaidGrade'),
+      gunningFog: scoreDelta('gunningFog'),
+      smog: scoreDelta('smog'),
+      colemanLiau: scoreDelta('colemanLiau'),
+      automatedReadability: scoreDelta('automatedReadability'),
+      consensusGrade: round(after.readability.summary.consensusGrade - before.readability.summary.consensusGrade),
+    },
+    tone: {
+      formality: toneDelta('formality'),
+      confidence: toneDelta('confidence'),
+      sentiment: toneDelta('sentiment'),
+      subjectivity: toneDelta('subjectivity'),
+      personalVoice: toneDelta('personalVoice'),
+      passiveVoice: toneDelta('passiveVoice'),
+    },
+    counts: {
+      words: after.readability.counts.words - before.readability.counts.words,
+      sentences: after.readability.counts.sentences - before.readability.counts.sentences,
+      characters: after.readability.counts.characters - before.readability.counts.characters,
+    },
+  };
+}
+
+/**
+ * Full result payload for one paraphrase: both metric snapshots, the delta,
+ * the word diff and the rule trace grouped for display.
+ */
+export function buildResult({ original, paraphrased, engineResult }) {
+  const before = measure(original);
+  const after = measure(paraphrased);
+  const segments = diffWords(original, paraphrased);
+
+  return {
+    original,
+    paraphrased,
+    metrics: { before, after, delta: delta(before, after) },
+    diff: { segments, stats: diffStats(segments) },
+    trace: engineResult.trace,
+    traceSummary: summarizeTrace(engineResult.trace),
+    plan: engineResult.plan,
+    passes: engineResult.passes,
+    engine: engineResult.engine,
+    seed: engineResult.seed,
+  };
+}
+
+/** Count edits per rule so the UI can show "why" at a glance. */
+export function summarizeTrace(trace = []) {
+  const byRule = new Map();
+  for (const entry of trace) {
+    const current = byRule.get(entry.rule) || { rule: entry.rule, count: 0, examples: [] };
+    current.count++;
+    if (current.examples.length < 3 && entry.from) {
+      current.examples.push({ from: entry.from, to: entry.to, reason: entry.reason });
+    }
+    byRule.set(entry.rule, current);
+  }
+  return [...byRule.values()].sort((a, b) => b.count - a.count);
+}
+
+function round(n) {
+  return Math.round((n + Number.EPSILON) * 10) / 10;
+}

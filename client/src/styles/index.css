@@ -1,0 +1,437 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Hand-drawn theme
+   --------------------------------------------------------------------------
+   The interface is meant to read as a notebook page: warm paper, felt-tip
+   headings, wobbly ink borders and hard offset shadows. Every value that
+   appears more than once lives here as a token, so a component never spells
+   out a radius, a shadow or a colour literal.
+
+   Fonts are self-hosted rather than loaded from a CDN: the app is built to
+   work offline, and typography that only arrives with a network connection
+   would break that promise on the first cold start.
+   ========================================================================== */
+
+@font-face {
+  font-family: 'Kalam';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/kalam-700-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Kalam';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/kalam-700-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Patrick Hand';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/patrick-hand-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Patrick Hand';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/patrick-hand-400-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  /* Palette. Seven values, no gradients, no other hues. */
+  --paper: #fdfbf7;
+  --surface: #ffffff;
+  --ink: #2d2d2d;
+  --pencil: #e5e0d8;
+  --marker: #ff4d4d;
+  --ballpoint: #2d5da1;
+  --postit: #fff9c4;
+
+  /* Ink at reduced weight, for placeholders and secondary notes. */
+  --ink-muted: #2d2d2db3;
+  --ink-faint: #2d2d2d66;
+
+  /* Wobbly radii. Never a single value. */
+  --radius-pill: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  --radius-card: 22px 8px 26px 10px / 10px 26px 8px 22px;
+  --radius-panel: 40px 12px 32px 16px / 16px 32px 12px 40px;
+  --radius-circle: 52% 44% 46% 56% / 46% 56% 44% 52%;
+
+  /* Hard offsets only -- no blur, no spread. */
+  --shadow-sm: 2px 2px 0 0 var(--ink);
+  --shadow: 4px 4px 0 0 var(--ink);
+  --shadow-lg: 8px 8px 0 0 var(--ink);
+
+  --stroke: 2px;
+  --stroke-thick: 3px;
+  --stroke-heavy: 4px;
+
+  --speed: 100ms;
+
+  /* Paper grain, applied to the page. */
+  --grain: radial-gradient(var(--pencil) 1px, transparent 1px);
+  --grain-size: 24px 24px;
+
+  color-scheme: light;
+}
+
+@layer base {
+  html, body, #root { height: 100%; }
+
+  body {
+    background-color: var(--paper);
+    background-image: var(--grain);
+    background-size: var(--grain-size);
+    color: var(--ink);
+    font-family: 'Patrick Hand', 'Segoe Print', 'Bradley Hand', cursive;
+    font-size: 1.125rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Kalam', 'Segoe Print', 'Bradley Hand', cursive;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  /* The scale jumps hard, so headings read as emphasised notes. */
+  h1 { font-size: 2.75rem; }
+  h2 { font-size: 1.75rem; }
+  h3 { font-size: 1.25rem; }
+
+  ::placeholder { color: var(--ink-faint); }
+
+  /*
+   * A fieldset defaults to min-width: min-content, which no other element does.
+   * Left alone it refuses to shrink below its widest child, so a scrolling row
+   * inside one pushes straight through the panel instead of clipping. Every
+   * fieldset here wraps a control group, so the reset is global.
+   */
+  fieldset {
+    min-width: 0;
+  }
+
+
+  /* Keyboard focus is always visible, in ballpoint blue. */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: var(--stroke-thick) solid var(--ballpoint);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition-duration: 0.01ms !important;
+    }
+    /* The jiggle and the bob are the motion; the rotation itself is static. */
+    .sketch-card:hover, .sketch-note:hover { transform: var(--rot, rotate(0deg)); }
+  }
+}
+
+@layer components {
+  /* ==========================================================================
+     Paper vocabulary
+     ========================================================================== */
+
+  /* A sheet of paper. Large surfaces use the panel radius. */
+  .sketch-panel {
+    background: var(--surface);
+    border: var(--stroke-thick) solid var(--ink);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow);
+  }
+
+  /* An index card. Rotation comes from --rot, set per item by index. */
+  .sketch-card {
+    background: var(--surface);
+    border: var(--stroke) solid var(--ink);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-sm);
+    transform: var(--rot, rotate(0deg));
+    transition: transform var(--speed) ease-out, box-shadow var(--speed) ease-out;
+  }
+
+  .sketch-card:hover {
+    transform: var(--rot-hover, rotate(1deg));
+    box-shadow: var(--shadow);
+  }
+
+  /* A sticky note. */
+  .sketch-note {
+    background: var(--postit);
+    border: var(--stroke) solid var(--ink);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-sm);
+    transform: var(--rot, rotate(-1deg));
+  }
+
+  /* Buttons press flat into the page. */
+  .sketch-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 48px;
+    padding: 0.5rem 1.25rem;
+    background: var(--surface);
+    color: var(--ink);
+    border: var(--stroke-thick) solid var(--ink);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow);
+    font-family: 'Kalam', cursive;
+    font-weight: 700;
+    /* 20px bold clears the WCAG large-text threshold (18.66px bold), which is
+       what lets the white-on-marker hover state hold contrast. */
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: transform var(--speed) ease-out, box-shadow var(--speed) ease-out,
+      background-color var(--speed) ease-out, color var(--speed) ease-out;
+  }
+
+  .sketch-btn:hover:not(:disabled) {
+    background: var(--marker);
+    color: var(--surface);
+    box-shadow: var(--shadow-sm);
+    transform: translate(2px, 2px);
+  }
+
+  .sketch-btn:active:not(:disabled) {
+    box-shadow: none;
+    transform: translate(4px, 4px);
+  }
+
+  .sketch-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* The secondary variant rests on erased pencil and hovers to ballpoint. */
+  .sketch-btn--secondary {
+    background: var(--pencil);
+  }
+
+  .sketch-btn--secondary:hover:not(:disabled) {
+    background: var(--ballpoint);
+    color: var(--surface);
+  }
+
+  /* A smaller button for dense toolbars; still 48px of touch target. */
+  .sketch-btn--sm {
+    padding: 0.3rem 0.8rem;
+    /* Still above the large-text threshold; the hover fill is marker red. */
+    font-size: 1.175rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .sketch-btn--sm:hover:not(:disabled) {
+    box-shadow: 1px 1px 0 0 var(--ink);
+    transform: translate(1px, 1px);
+  }
+
+  /* Selected state for a toggle-style button (tone picker, tabs). */
+  .sketch-btn--active {
+    background: var(--postit);
+    box-shadow: var(--shadow-sm);
+    transform: translate(2px, 2px);
+  }
+
+  .sketch-btn--active:hover:not(:disabled) {
+    background: var(--marker);
+  }
+
+  /* Inputs are full boxes, never underlines. */
+  .sketch-input {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.5rem 0.875rem;
+    background: var(--surface);
+    color: var(--ink);
+    border: var(--stroke) solid var(--ink);
+    border-radius: var(--radius-card);
+    font-family: 'Patrick Hand', cursive;
+    font-size: 1.125rem;
+    transition: border-color var(--speed) ease-out, box-shadow var(--speed) ease-out;
+  }
+
+  .sketch-input:focus {
+    outline: none;
+    border-color: var(--ballpoint);
+    box-shadow: 0 0 0 3px #2d5da133;
+  }
+
+  /* A dashed rule, the way a page is divided by hand. */
+  .sketch-divider {
+    border: 0;
+    border-top: var(--stroke) dashed var(--ink-faint);
+  }
+
+  /* A post-it label. */
+  .sketch-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.1rem 0.6rem;
+    background: var(--postit);
+    border: var(--stroke) solid var(--ink);
+    border-radius: var(--radius-pill);
+    font-size: 1rem;
+    transform: var(--rot, rotate(-1deg));
+  }
+
+  /* A strip of tape, for pinning a panel to the page. */
+  .sketch-tape {
+    position: absolute;
+    width: 6rem;
+    height: 1.6rem;
+    background: #2d2d2d14;
+    border-left: var(--stroke) dashed var(--ink-faint);
+    border-right: var(--stroke) dashed var(--ink-faint);
+    transform: var(--rot, rotate(-2deg));
+    pointer-events: none;
+  }
+
+  /* A thumbtack, pinned at top centre. */
+  .sketch-tack {
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    background: var(--marker);
+    border: var(--stroke) solid var(--ink);
+    border-radius: var(--radius-circle);
+    pointer-events: none;
+  }
+
+  /* Links are underlined by hand, not by the browser. */
+  .sketch-link {
+    color: var(--ballpoint);
+    text-decoration: underline wavy var(--ballpoint) 1.5px;
+    text-underline-offset: 4px;
+  }
+
+  /* An icon enclosed in a rough circle. */
+  .sketch-icon-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: var(--stroke) solid var(--ink);
+    border-radius: var(--radius-circle);
+    background: var(--surface);
+  }
+
+  /* A meter drawn as a box with an ink fill. */
+  .sketch-meter {
+    position: relative;
+    height: 0.9rem;
+    background: var(--surface);
+    border: var(--stroke) solid var(--ink);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+
+  .sketch-meter > .fill {
+    height: 100%;
+    background: var(--ballpoint);
+    transition: width var(--speed) ease-out;
+  }
+
+  /* The mark showing where a value sat before the rewrite. */
+  .sketch-meter > .before-mark {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--marker);
+  }
+
+  /* Decorative marks bob gently; nothing functional does. */
+  @keyframes sketch-bob {
+    0%, 100% { transform: translateY(0) var(--bob-rot, rotate(0deg)); }
+    50% { transform: translateY(-4px) var(--bob-rot, rotate(0deg)); }
+  }
+
+  .sketch-bob {
+    animation: sketch-bob 3s ease-in-out infinite;
+  }
+
+  /* A correction: readable ink, struck through in marker red. */
+  .sketch-struck {
+    color: var(--ink-muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--marker);
+    text-decoration-thickness: 2px;
+  }
+
+  /* An insertion, in ballpoint blue -- 6.58:1 on paper. */
+  .sketch-inserted {
+    color: var(--ballpoint);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  /* Scrollbars, kept in the same ink. */
+  .sketch-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ink-faint) transparent;
+  }
+
+  /* A row that scrolls sideways inside its panel. The padding keeps the hard
+     shadows of the first and last items from being shaved off by the clip. */
+  .sketch-strip {
+    display: flex;
+    gap: 0.5rem;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 4px 8px 2px;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+  }
+
+  .sketch-strip > * {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  /*
+   * The frame around a scrolling strip.
+   *
+   * A nested scroll container still contributes its scrollable width to the
+   * ancestors' scrollWidth in Chromium, which puts a horizontal scrollbar on
+   * the whole page even though nothing is visibly out of place. Clipping here
+   * stops that: overflow-x: clip crops without creating a second scroll
+   * container, and pairs legally with overflow-y: visible, so the nudge
+   * buttons and focus rings are not cut off vertically.
+   */
+  .sketch-strip-frame {
+    position: relative;
+    min-width: 0;
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@humaninzer/engine",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The HumanInzer rewriting engine: NLP, rules, metrics and exporters. Pure JavaScript with no platform dependencies, so it runs identically in Node and in the browser.",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./nlp/*": "./src/nlp/*",
+    "./data/*": "./src/data/*",
+    "./lib/*": "./src/lib/*"
+  },
+  "sideEffects": false
+}
