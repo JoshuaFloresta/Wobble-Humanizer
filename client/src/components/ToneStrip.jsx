@@ -81,29 +81,6 @@ export default function ToneStrip({ tones, value, onChange, name }) {
           );
         })}
       </div>
-
-      {overflow.start && <Nudge direction={-1} onClick={() => nudge(-1)} side="left" />}
-      {overflow.end && <Nudge direction={1} onClick={() => nudge(1)} side="right" />}
     </div>
-  );
-}
-
-function Nudge({ onClick, side }) {
-  const Icon = side === 'left' ? ChevronLeft : ChevronRight;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      tabIndex={-1}
-      aria-hidden="true"
-      className="sketch-icon-circle absolute top-1/2 hidden h-8 w-8 -translate-y-1/2 md:flex"
-      style={{
-        [side]: '0.1rem',
-        background: 'var(--surface)',
-        boxShadow: 'var(--shadow-sm)',
-      }}
-    >
-      <Icon size={16} strokeWidth={2.5} />
-    </button>
   );
 }

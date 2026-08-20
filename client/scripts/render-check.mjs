@@ -61,7 +61,7 @@ const parts = renderWithData({
 });
 
 const expectations = {
-  app: [app, ['HumanInzer', 'Your text', 'Skip to content', 'History', 'sketch-panel']],
+  app: [app, ['Wobble', 'Your text', 'Skip to content', 'History', 'sketch-panel']],
   controls: [parts.controls, ['Settings', 'Concise', 'Reading level', 'Intensity', 'sketch-btn']],
   output: [parts.output, ['Output', 'Changes', 'Why', 'Metrics', 'Copy', 'Reading grade', 'sketch-tack']],
   metrics: [parts.metrics, ['Flesch-Kincaid Grade', 'Gunning Fog', 'SMOG', 'Coleman-Liau', 'Formality', 'Passive voice', 'sketch-meter']],

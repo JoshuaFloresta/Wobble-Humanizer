@@ -139,7 +139,7 @@ const { render } = await import(pathToFileURL(path.join(root, '.ssr-check', 'ssr
 
 await check('app renders its controls offline', () => {
   const html = render();
-  for (const needle of ['HumanInzer', 'Your text', 'Settings', 'Concise', 'Reading level', 'sketch-panel']) {
+  for (const needle of ['Wobble', 'Your text', 'Settings', 'Concise', 'Reading level', 'sketch-panel']) {
     assert.ok(html.includes(needle), `offline render missing "${needle}"`);
   }
   assert.ok(!html.includes('Sharpening pencils'), 'controls should not be stuck loading offline');

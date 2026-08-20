@@ -57,45 +57,96 @@
     U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-:root {
-  /* Palette. Seven values, no gradients, no other hues. */
-  --paper: #fdfbf7;
-  --surface: #ffffff;
-  --ink: #2d2d2d;
-  --pencil: #e5e0d8;
-  --marker: #ff4d4d;
-  --ballpoint: #2d5da1;
-  --postit: #fff9c4;
-
-  /* Ink at reduced weight, for placeholders and secondary notes. */
-  --ink-muted: #2d2d2db3;
-  --ink-faint: #2d2d2d66;
-
-  /* Wobbly radii. Never a single value. */
-  --radius-pill: 255px 15px 225px 15px / 15px 225px 15px 255px;
-  --radius-card: 22px 8px 26px 10px / 10px 26px 8px 22px;
-  --radius-panel: 40px 12px 32px 16px / 16px 32px 12px 40px;
-  --radius-circle: 52% 44% 46% 56% / 46% 56% 44% 52%;
-
-  /* Hard offsets only -- no blur, no spread. */
-  --shadow-sm: 2px 2px 0 0 var(--ink);
-  --shadow: 4px 4px 0 0 var(--ink);
-  --shadow-lg: 8px 8px 0 0 var(--ink);
-
-  --stroke: 2px;
-  --stroke-thick: 3px;
-  --stroke-heavy: 4px;
-
-  --speed: 100ms;
-
-  /* Paper grain, applied to the page. */
-  --grain: radial-gradient(var(--pencil) 1px, transparent 1px);
-  --grain-size: 24px 24px;
-
-  color-scheme: light;
-}
-
 @layer base {
+  :root {
+    /* Light theme (default). */
+    --paper: #fdfbf7;
+    --surface: #ffffff;
+    --ink: #2d2d2d;
+    --pencil: #e5e0d8;
+    --marker: #ff4d4d;
+    --ballpoint: #2d5da1;
+    --postit: #fff9c4;
+    --ink-muted: #2d2d2db3;
+    --ink-faint: #2d2d2d66;
+
+    /* Wobbly radii. Never a single value. */
+    --radius-pill: 255px 15px 225px 15px / 15px 225px 15px 255px;
+    --radius-card: 22px 8px 26px 10px / 10px 26px 8px 22px;
+    --radius-panel: 40px 12px 32px 16px / 16px 32px 12px 40px;
+    --radius-circle: 52% 44% 46% 56% / 46% 56% 44% 52%;
+
+    /* Hard offsets only -- no blur, no spread. */
+    --shadow-sm: 2px 2px 0 0 var(--ink);
+    --shadow: 4px 4px 0 0 var(--ink);
+    --shadow-lg: 8px 8px 0 0 var(--ink);
+
+    --stroke: 2px;
+    --stroke-thick: 3px;
+    --stroke-heavy: 4px;
+    --speed: 100ms;
+
+    /* Paper grain, applied to the page. */
+    --grain: radial-gradient(var(--pencil) 1px, transparent 1px);
+    --grain-size: 24px 24px;
+
+    color-scheme: light;
+  }
+
+  /* Dark theme: inverted paper and ink, same accents. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #1a1a1a;
+      --surface: #0f0f0f;
+      --ink: #e8e8e8;
+      --pencil: #2a2a2a;
+      --marker: #ff6b6b;
+      --ballpoint: #5a9fd4;
+      --postit: #4d4d00;
+      --ink-muted: #e8e8e8b3;
+      --ink-faint: #e8e8e866;
+
+      /* Speckled grain texture for dark mode. */
+      --grain: radial-gradient(#4a4a4a 1px, transparent 1px);
+      --grain-size: 16px 16px;
+
+      color-scheme: dark;
+    }
+  }
+
+  /* Explicit dark mode toggle, for when the user chooses dark regardless of system preference. */
+  [data-theme="dark"] {
+    --paper: #1a1a1a;
+    --surface: #0f0f0f;
+    --ink: #e8e8e8;
+    --pencil: #2a2a2a;
+    --marker: #ff6b6b;
+    --ballpoint: #5a9fd4;
+    --postit: #4d4d00;
+    --ink-muted: #e8e8e8b3;
+    --ink-faint: #e8e8e866;
+    --grain: radial-gradient(#4a4a4a 1px, transparent 1px);
+    --grain-size: 16px 16px;
+
+    color-scheme: dark;
+  }
+
+  /* Explicit light mode toggle, to override system dark preference. */
+  [data-theme="light"] {
+    --paper: #fdfbf7;
+    --surface: #ffffff;
+    --ink: #2d2d2d;
+    --pencil: #e5e0d8;
+    --marker: #ff4d4d;
+    --ballpoint: #2d5da1;
+    --postit: #fff9c4;
+    --ink-muted: #2d2d2db3;
+    --ink-faint: #2d2d2d66;
+    --grain: radial-gradient(var(--pencil) 1px, transparent 1px);
+
+    color-scheme: light;
+  }
+
   html, body, #root { height: 100%; }
 
   body {

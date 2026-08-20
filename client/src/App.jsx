@@ -6,6 +6,8 @@ import { toMarkdown, toPlainText, toJson } from '@humaninzer/engine';
 import { watchConnectivity } from './lib/registerSW.js';
 import { Squiggle } from './components/Sketch.jsx';
 import InputArea from './components/InputArea.jsx';
+import { WobbleLockup } from './components/WobbleMark.jsx';
+import ThemeToggle from './components/ThemeToggle.jsx';
 import Controls from './components/Controls.jsx';
 import OutputCard from './components/OutputCard.jsx';
 import HistoryPanel from './components/HistoryPanel.jsx';
@@ -229,15 +231,16 @@ export default function App() {
         Skip to content
       </a>
 
+      <ThemeToggle />
       <header className="mx-auto w-full max-w-5xl px-6 pt-12 pb-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="relative inline-block">
-              HumanInzer
-              <Squiggle className="absolute -bottom-2 left-0 w-full" />
-            </h1>
+            <div className="relative inline-block">
+              <WobbleLockup size={48} />
+              <Squiggle className="absolute -bottom-3 left-0 w-full" style={{ marginTop: '0.5rem' }} />
+            </div>
             <p className="mt-3 text-lg" style={{ color: 'var(--ink-muted)' }}>
-              Rewrite it, Summarize it, HumanAIze it! 
+              Rewrite it, Summarize it, sketch it by hand. 
             </p>
           </div>
           <p className="sketch-tag" style={{ '--rot': 'rotate(1.5deg)' }}>{headerNote}</p>
@@ -257,16 +260,37 @@ export default function App() {
           )}
 
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
-            <InputArea
-              value={text}
-              onChange={setText}
-              onSubmit={run}
-              onClear={() => { setText(''); setResult(null); }}
-              onSample={() => setText(SAMPLE)}
-              busy={busy}
-              maxChars={maxChars}
-              liveMetrics={liveMetrics}
-            />
+            <div className="flex flex-col gap-4">
+              <InputArea
+                value={text}
+                onChange={setText}
+                onSubmit={run}
+                onClear={() => { setText(''); setResult(null); }}
+                onSample={() => setText(SAMPLE)}
+                busy={busy}
+                maxChars={maxChars}
+                liveMetrics={liveMetrics}
+              />
+              <div
+                style={{
+                  maxHeight: '280px',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <HistoryPanel
+                  items={history}
+                  source={historySource}
+                  onSelect={selectHistoryItem}
+                  onDelete={deleteHistoryItem}
+                  onClear={clearHistory}
+                  activeId={result?.id ?? null}
+                  error={historyError}
+                />
+              </div>
+            </div>
             <Controls
               presets={presets}
               options={options}
@@ -278,18 +302,6 @@ export default function App() {
           </div>
 
           <OutputCard result={result} onExport={exportResult} onRerun={rerun} busy={busy} />
-
-          <div className="md:-mx-4">
-            <HistoryPanel
-              items={history}
-              source={historySource}
-              onSelect={selectHistoryItem}
-              onDelete={deleteHistoryItem}
-              onClear={clearHistory}
-              activeId={result?.id ?? null}
-              error={historyError}
-            />
-          </div>
         </div>
       </main>
     </div>
