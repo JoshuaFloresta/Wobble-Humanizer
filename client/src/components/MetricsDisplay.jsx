@@ -21,6 +21,9 @@ export default function MetricsDisplay({ before, after, delta, compact = false }
 
   const readability = after.readability;
   const tone = after.tone;
+  const naturalness = after.naturalness;
+  const hasNaturalness = naturalness && !naturalness.empty;
+  const beforeNaturalness = before?.naturalness;
 
   return (
     <div className="flex flex-col gap-7">
@@ -51,13 +54,24 @@ export default function MetricsDisplay({ before, after, delta, compact = false }
             betterWhen="higher"
             hint={readability.scores.fleschReadingEase.label}
           />
-          <Stat
-            index={3}
-            label="Tone"
-            value={tone.dominant?.label || '-'}
-            hint={`${readability.summary.readingTimeSeconds}s read`}
-            textual
-          />
+          {hasNaturalness ? (
+            <Stat
+              index={3}
+              label="Naturalness"
+              value={naturalness.composite}
+              delta={delta?.naturalness?.composite}
+              betterWhen="higher"
+              hint="How human the rhythm and word choice read"
+            />
+          ) : (
+            <Stat
+              index={3}
+              label="Tone"
+              value={tone.dominant?.label || '-'}
+              hint={`${readability.summary.readingTimeSeconds}s read`}
+              textual
+            />
+          )}
         </div>
       </section>
 
@@ -100,6 +114,27 @@ export default function MetricsDisplay({ before, after, delta, compact = false }
           ))}
         </ul>
       </section>
+
+      {!compact && hasNaturalness && (
+        <section aria-labelledby="metrics-naturalness-heading">
+          <h3 id="metrics-naturalness-heading" className="mb-3">Naturalness signals</h3>
+          <ul className="flex flex-col gap-3">
+            {Object.entries(naturalness.metrics).map(([key, metric]) => (
+              <MetricRow
+                key={key}
+                name={metric.name}
+                hint={(metric.evidence || []).join(', ')}
+                value={metric.value}
+                label={metric.label}
+                delta={delta?.naturalness?.[key]}
+                betterWhen="higher"
+                max={100}
+                beforeValue={beforeNaturalness?.metrics?.[key]?.value}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

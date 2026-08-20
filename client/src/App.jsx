@@ -114,8 +114,12 @@ export default function App() {
         readabilityTarget: options.readabilityTarget,
         intensity: options.intensity,
         preserve: options.preserveText.split(',').map((w) => w.trim()).filter(Boolean),
+        seed: overrides.seed ?? Math.floor(Math.random() * 4294967295),
         ...overrides,
       };
+
+      // Add delay for visual feedback (simulates processing)
+      await new Promise((resolve) => setTimeout(resolve, 600));
 
       // Compute here: instant, and unaffected by the network.
       const result = paraphraseLocally(text, engineOptions);
@@ -159,11 +163,6 @@ export default function App() {
     }
   }, [canSubmit, text, options, health, refreshHistory]);
 
-  // "Vary" asks for a different alternative by changing the seed. The engine
-  // stays deterministic: the same seed always reproduces the same rewrite.
-  const rerun = useCallback(() => {
-    run({ seed: Math.floor(Math.random() * 4294967295) });
-  }, [run]);
 
   const exportResult = useCallback((format) => {
     if (!result) return;
@@ -301,7 +300,7 @@ export default function App() {
             />
           </div>
 
-          <OutputCard result={result} onExport={exportResult} onRerun={rerun} busy={busy} />
+          <OutputCard result={result} onExport={exportResult} busy={busy} />
         </div>
       </main>
     </div>

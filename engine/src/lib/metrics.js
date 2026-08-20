@@ -8,18 +8,21 @@
 
 import { computeReadability } from '../nlp/readability.js';
 import { analyzeTone } from '../nlp/tone.js';
+import { analyzeNaturalness } from '../nlp/naturalness.js';
 import { diffWords, diffStats } from './diff.js';
 
 /**
  * @param {string} text
- * @returns {object} readability + tone metrics for one piece of text
+ * @returns {object} readability + tone + naturalness metrics for one piece of text
  */
 export function measure(text) {
   const readability = computeReadability(text);
   const tone = analyzeTone(text);
+  const naturalness = analyzeNaturalness(text);
   return {
     readability,
     tone,
+    naturalness,
     empty: Boolean(readability.empty),
   };
 }
@@ -34,6 +37,16 @@ export function delta(before, after) {
   const toneDelta = (key) => round(
     after.tone.metrics[key].value - before.tone.metrics[key].value,
   );
+  const naturalDelta = (key) => round(
+    after.naturalness.metrics[key].value - before.naturalness.metrics[key].value,
+  );
+  const naturalness = before.naturalness.empty || after.naturalness.empty ? null : {
+    composite: round(after.naturalness.composite - before.naturalness.composite),
+    burstiness: naturalDelta('burstiness'),
+    diversity: naturalDelta('diversity'),
+    aiTells: naturalDelta('aiTells'),
+    openerVariety: naturalDelta('openerVariety'),
+  };
 
   return {
     readability: {
@@ -53,6 +66,7 @@ export function delta(before, after) {
       personalVoice: toneDelta('personalVoice'),
       passiveVoice: toneDelta('passiveVoice'),
     },
+    naturalness,
     counts: {
       words: after.readability.counts.words - before.readability.counts.words,
       sentences: after.readability.counts.sentences - before.readability.counts.sentences,

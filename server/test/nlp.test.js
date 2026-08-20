@@ -5,6 +5,7 @@ import { segmentSentences, tokenizeWords, countWords } from '@humaninzer/engine/
 import { countSyllables, isComplexWord } from '@humaninzer/engine/nlp/syllables.js';
 import { computeReadability } from '@humaninzer/engine/nlp/readability.js';
 import { analyzeTone } from '@humaninzer/engine/nlp/tone.js';
+import { analyzeNaturalness } from '@humaninzer/engine/nlp/naturalness.js';
 import { conform, toPast, toGerund, toPlural } from '@humaninzer/engine/nlp/morphology.js';
 import { tagSentence } from '@humaninzer/engine/nlp/pos.js';
 
@@ -93,4 +94,29 @@ test('tagger identifies the parts of speech the engine gates on', () => {
   assert.equal(byWord.team, 'noun');
   assert.equal(byWord.utilized, 'verb');
   assert.equal(byWord.comprehensive, 'adj');
+});
+
+test('naturalness scores generated-sounding text lower than plain prose', () => {
+  const generated = analyzeNaturalness(
+    'It is important to note that our platform leverages a robust, cutting-edge ecosystem. '
+    + 'Moreover, we navigate the complexities of modern business. Furthermore, our solution '
+    + "boasts seamless integration. In today's fast-paced world, we unlock the potential of every team.",
+  );
+  const plain = analyzeNaturalness(
+    'I fixed the bug this morning. It took longer than expected. The root cause was a stale '
+    + 'cache entry that nobody had cleaned up in months. Once I found it, the fix itself was three lines.',
+  );
+  assert.ok(plain.composite > generated.composite);
+  assert.ok(generated.metrics.aiTells.evidence.length > 0);
+});
+
+test('naturalness reports empty on too little text without throwing', () => {
+  assert.equal(analyzeNaturalness('').empty, true);
+  assert.equal(analyzeNaturalness('One sentence only.').empty, true);
+});
+
+test('naturalness rewards varied sentence length over uniform length', () => {
+  const uniform = analyzeNaturalness('The cat sat down. The dog ran fast. The bird flew high. The fish swam deep.');
+  const varied = analyzeNaturalness('The cat sat. Meanwhile, the old dog that lived next door ran across the yard as fast as it could. Birds flew.');
+  assert.ok(varied.metrics.burstiness.value > uniform.metrics.burstiness.value);
 });

@@ -130,6 +130,13 @@ function scoreVariant(variant, plan) {
   return -(registerCost + gradeCost);
 }
 
+// Candidates within this many score points of the best are treated as
+// equally good, so the seed picks among them instead of always taking the
+// single top-ranked word. Wide enough to give real variety between runs,
+// narrow enough that every candidate in the band is still a defensible
+// choice for the target register and grade.
+const SWAP_EPSILON = 0.3;
+
 /**
  * Rule 6: sense-scoped synonym substitution.
  *
@@ -171,7 +178,16 @@ export function synonymRule(sentence, plan, ctx) {
         .sort((a, b) => b.score - a.score);
       const best = ranked[0];
       // Only swap when the gain is worth the churn.
-      chosen = best.score - currentScore >= plan.swapThreshold ? best.v : null;
+      if (best.score - currentScore >= plan.swapThreshold) {
+        // Among the words that score within SWAP_EPSILON of the best, the
+        // seed picks one rather than always taking the top-ranked word --
+        // this is what makes two runs of the same request read differently
+        // while every candidate in the band stays equally defensible.
+        const tied = ranked.filter((r) => r.v.lemma !== entry.lemma && best.score - r.score <= SWAP_EPSILON);
+        chosen = tied.length ? tied[Math.floor(ctx.rng() * tied.length)].v : best.v;
+      } else {
+        chosen = null;
+      }
       ctx.decisions.set(decisionKey, chosen);
     }
 

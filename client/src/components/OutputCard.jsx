@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Dices, FileDown } from 'lucide-react';
+import { FileDown } from 'lucide-react';
 import CopyButton from './CopyButton.jsx';
 import DiffView from './DiffView.jsx';
 import TracePanel from './TracePanel.jsx';
 import MetricsDisplay from './MetricsDisplay.jsx';
+import Loader from './Loader.jsx';
 import { Thumbtack } from './Sketch.jsx';
 import { sketchPill } from '../lib/sketch.js';
 
@@ -20,13 +21,13 @@ const TABS = [
  * Tabs are a real tablist with roving focus so the panel is navigable by
  * keyboard, and the output text is always the default view.
  */
-export default function OutputCard({ result, onExport, onRerun, busy }) {
+export default function OutputCard({ result, onExport, busy }) {
   const [tab, setTab] = useState('output');
 
-  if (!result) {
+  if (!result && !busy) {
     return (
       <section
-        className="sketch-panel flex min-h-[16rem] flex-col items-center justify-center gap-3 p-10 text-center"
+        className="sketch-panel flex min-h-64 flex-col items-center justify-center gap-3 p-10 text-center"
         style={{ borderStyle: 'dashed', boxShadow: 'none' }}
       >
         <h2>Nothing here yet</h2>
@@ -34,6 +35,18 @@ export default function OutputCard({ result, onExport, onRerun, busy }) {
           Write something on the left, pick a tone, then rewrite or summarize it. Every edit
           gets listed with the rule that made it.
         </p>
+      </section>
+    );
+  }
+
+  if (busy && !result) {
+    return (
+      <section
+        className="sketch-panel flex min-h-64 flex-col items-center justify-center gap-4 p-10 text-center"
+        style={{ borderStyle: 'dashed', boxShadow: 'none' }}
+      >
+        <Loader />
+        <p style={{ color: 'var(--ink-muted)' }}>Rephrasing your text...</p>
       </section>
     );
   }
@@ -74,25 +87,27 @@ export default function OutputCard({ result, onExport, onRerun, busy }) {
         <div className="flex flex-wrap items-center gap-2">
           <CopyButton text={result.paraphrased} />
           <ExportMenu onExport={onExport} />
-          <button
-            type="button"
-            onClick={() => onRerun()}
-            disabled={busy}
-            className="sketch-btn sketch-btn--sm sketch-btn--secondary"
-            title="Run again with a different seed for an alternative rewrite"
-          >
-            <Dices size={16} strokeWidth={2.5} aria-hidden="true" />
-            Vary
-          </button>
         </div>
       </header>
 
       <hr className="sketch-divider mx-5" />
 
       <div className="px-5 py-5">
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          .result-content {
+            animation: fadeIn 300ms ease-in;
+          }
+        `}</style>
         {tab === 'output' && (
-          <div role="tabpanel" id="panel-output" aria-labelledby="tab-output" className="flex flex-col gap-6">
-            <p className="whitespace-pre-wrap text-xl leading-loose">{result.paraphrased}</p>
+          <div role="tabpanel" id="panel-output" aria-labelledby="tab-output" className="result-content flex flex-col gap-6" key={result.id}>
+            <div className="flex items-start gap-3">
+              {busy && <Loader />}
+              <p className="whitespace-pre-wrap text-xl leading-loose flex-1">{result.paraphrased}</p>
+            </div>
             <hr className="sketch-divider" />
             <MetricsDisplay
               before={result.metrics.before}
@@ -103,12 +118,12 @@ export default function OutputCard({ result, onExport, onRerun, busy }) {
           </div>
         )}
         {tab === 'diff' && (
-          <div role="tabpanel" id="panel-diff" aria-labelledby="tab-diff">
+          <div role="tabpanel" id="panel-diff" className="result-content" key={result.id}>
             <DiffView segments={result.diff.segments} stats={result.diff.stats} />
           </div>
         )}
         {tab === 'why' && (
-          <div role="tabpanel" id="panel-why" aria-labelledby="tab-why">
+          <div role="tabpanel" id="panel-why" className="result-content" key={result.id}>
             <TracePanel
               trace={result.trace}
               traceSummary={result.traceSummary}
@@ -119,7 +134,7 @@ export default function OutputCard({ result, onExport, onRerun, busy }) {
           </div>
         )}
         {tab === 'metrics' && (
-          <div role="tabpanel" id="panel-metrics" aria-labelledby="tab-metrics">
+          <div role="tabpanel" id="panel-metrics" className="result-content" key={result.id}>
             <MetricsDisplay
               before={result.metrics.before}
               after={result.metrics.after}

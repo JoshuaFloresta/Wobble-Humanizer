@@ -24,6 +24,7 @@ export { diffWords, diffStats } from './lib/diff.js';
 // Individual analyzers, for callers that want one number rather than a run
 export { computeReadability, computeCounts } from './nlp/readability.js';
 export { analyzeTone } from './nlp/tone.js';
+export { analyzeNaturalness } from './nlp/naturalness.js';
 export { segmentSentences, tokenizeWords, countWords, countParagraphs } from './nlp/tokenize.js';
 export { countSyllables, isComplexWord, isPolysyllabic } from './nlp/syllables.js';
 
