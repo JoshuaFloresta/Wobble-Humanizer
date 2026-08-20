@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <style>
+      @media (prefers-color-scheme: dark) {
+        .wobble-ink { stroke: #e8e8e8; }
+      }
+      .wobble-ink { stroke: #2d2d2d; }
+      .wobble-marker { stroke: #ff4d4d; }
+    </style>
+  </defs>
+  <!-- Outer wobbly circle -->
+  <path
+    class="wobble-ink"
+    d="M74 22C44 24 20 44 21 66C22 90 44 100 62 99C84 98 100 82 99 58C98 36 82 22 60 21C44 20 34 26 30 32"
+    stroke-width="7"
+    fill="none"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Inner wavy marker -->
+  <path
+    class="wobble-marker"
+    d="M40 60C47 49 51 71 59 60C67 49 71 71 81 58"
+    stroke-width="7"
+    fill="none"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

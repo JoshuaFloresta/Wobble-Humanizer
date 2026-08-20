@@ -219,7 +219,7 @@ export default function App() {
     if (!health) return 'Runs in this browser';
     return health.persistence.available
       ? `Runs in this browser - history also saved on the server (${health.persistence.mode})`
-      : 'Runs in this browser - history saved here too';
+      : 'Try it now!';
   }, [health, online]);
 
   return (
@@ -240,7 +240,7 @@ export default function App() {
               <Squiggle className="absolute -bottom-3 left-0 w-full" style={{ marginTop: '0.5rem' }} />
             </div>
             <p className="mt-3 text-lg" style={{ color: 'var(--ink-muted)' }}>
-              Rewrite it, Summarize it, sketch it by hand. 
+             Humanize text flow, instantly summarize notes, and draw ideas naturally.
             </p>
           </div>
           <p className="sketch-tag" style={{ '--rot': 'rotate(1.5deg)' }}>{headerNote}</p>
