@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import api, { ApiError } from './lib/api.js';
 import localHistory from './lib/localHistory.js';
 import { paraphraseLocally, analyzeLocally, localPresets } from './lib/engine.js';
-import { toMarkdown, toPlainText, toJson } from '@humaninzer/engine';
+import { toMarkdown, toPlainText, toJson, buildResult } from '@humaninzer/engine';
 import { watchConnectivity } from './lib/registerSW.js';
 import { Squiggle } from './components/Sketch.jsx';
 import InputArea from './components/InputArea.jsx';
@@ -164,6 +164,19 @@ export default function App() {
   }, [canSubmit, text, options, health, refreshHistory]);
 
 
+  // Lets the user edit or add to the rewritten text by hand. Re-derives
+  // metrics and the diff against the edited text, so Changes/Metrics and
+  // Copy/Export all reflect what is actually in the box -- only the trace
+  // and plan stay put, since those explain the engine's original rewrite,
+  // not a manual edit made after the fact.
+  const updateResultText = useCallback((newText) => {
+    setResult((prev) => {
+      if (!prev) return prev;
+      const rebuilt = buildResult({ original: prev.original, paraphrased: newText, engineResult: prev });
+      return { ...prev, ...rebuilt };
+    });
+  }, []);
+
   const exportResult = useCallback((format) => {
     if (!result) return;
     const run = { ...result, title: titleFor(result), createdAt: new Date().toISOString() };
@@ -300,7 +313,7 @@ export default function App() {
             />
           </div>
 
-          <OutputCard result={result} onExport={exportResult} busy={busy} />
+          <OutputCard result={result} onExport={exportResult} onEditResult={updateResultText} busy={busy} />
         </div>
       </main>
     </div>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { FileDown } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { FileDown, RotateCcw } from 'lucide-react';
 import CopyButton from './CopyButton.jsx';
 import DiffView from './DiffView.jsx';
 import TracePanel from './TracePanel.jsx';
@@ -7,6 +7,12 @@ import MetricsDisplay from './MetricsDisplay.jsx';
 import Loader from './Loader.jsx';
 import { Thumbtack } from './Sketch.jsx';
 import { sketchPill } from '../lib/sketch.js';
+
+// How long to wait after the last keystroke before re-deriving metrics and
+// the diff against the edited text. Short enough to feel live, long enough
+// that typing a whole sentence does not re-run readability/tone/naturalness
+// analysis on every character.
+const EDIT_COMMIT_DELAY = 350;
 
 const TABS = [
   { id: 'output', label: 'Output' },
@@ -21,8 +27,41 @@ const TABS = [
  * Tabs are a real tablist with roving focus so the panel is navigable by
  * keyboard, and the output text is always the default view.
  */
-export default function OutputCard({ result, onExport, busy }) {
+export default function OutputCard({ result, onExport, onEditResult, busy }) {
   const [tab, setTab] = useState('output');
+
+  // Identifies "this is a new run" without relying on result.id, which starts
+  // out null and only arrives later once a server save completes -- keying
+  // off it would wipe an in-progress edit the moment persistence finishes.
+  const runKey = result ? `${result.seed}::${result.original}` : null;
+  const [draft, setDraft] = useState(result?.paraphrased ?? '');
+  const pristineRef = useRef(result?.paraphrased ?? '');
+  const commitTimer = useRef(null);
+  const lastRunKey = useRef(runKey);
+
+  useEffect(() => {
+    if (runKey !== lastRunKey.current) {
+      lastRunKey.current = runKey;
+      setDraft(result?.paraphrased ?? '');
+      pristineRef.current = result?.paraphrased ?? '';
+    }
+  }, [runKey, result?.paraphrased]);
+
+  useEffect(() => () => clearTimeout(commitTimer.current), []);
+
+  const edited = draft !== pristineRef.current;
+
+  const handleEdit = (value) => {
+    setDraft(value);
+    clearTimeout(commitTimer.current);
+    commitTimer.current = setTimeout(() => onEditResult?.(value), EDIT_COMMIT_DELAY);
+  };
+
+  const revert = () => {
+    clearTimeout(commitTimer.current);
+    setDraft(pristineRef.current);
+    onEditResult?.(pristineRef.current);
+  };
 
   if (!result && !busy) {
     return (
@@ -85,7 +124,21 @@ export default function OutputCard({ result, onExport, busy }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <CopyButton text={result.paraphrased} />
+          {edited && (
+            <>
+              <span className="sketch-tag" style={{ '--rot': 'rotate(-1deg)' }}>Edited</span>
+              <button
+                type="button"
+                onClick={revert}
+                className="sketch-btn sketch-btn--sm sketch-btn--secondary"
+                title="Revert to the engine's original rewrite"
+              >
+                <RotateCcw size={16} strokeWidth={2.5} aria-hidden="true" />
+                Revert
+              </button>
+            </>
+          )}
+          <CopyButton text={draft} />
           <ExportMenu onExport={onExport} />
         </div>
       </header>
@@ -103,11 +156,23 @@ export default function OutputCard({ result, onExport, busy }) {
           }
         `}</style>
         {tab === 'output' && (
-          <div role="tabpanel" id="panel-output" aria-labelledby="tab-output" className="result-content flex flex-col gap-6" key={result.id}>
+          <div role="tabpanel" id="panel-output" aria-labelledby="tab-output" className="result-content flex flex-col gap-3" key={runKey}>
             <div className="flex items-start gap-3">
               {busy && <Loader />}
-              <p className="whitespace-pre-wrap text-xl leading-loose flex-1">{result.paraphrased}</p>
+              <label className="sr-only" htmlFor="output-editor">Rewritten text - editable</label>
+              <textarea
+                id="output-editor"
+                value={draft}
+                onChange={(event) => handleEdit(event.target.value)}
+                rows={8}
+                spellCheck="true"
+                className="sketch-input resize-y flex-1 text-xl leading-loose"
+                style={{ minHeight: '10rem' }}
+              />
             </div>
+            <p className="text-base" style={{ color: 'var(--ink-muted)' }}>
+              {draft.length.toLocaleString()} characters - click in to edit or add your own text
+            </p>
             <hr className="sketch-divider" />
             <MetricsDisplay
               before={result.metrics.before}
