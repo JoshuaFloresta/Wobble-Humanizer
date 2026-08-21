@@ -18,7 +18,7 @@ export {
 } from './data/stopwords.js';
 
 // Metrics and result assembly
-export { measure, delta, buildResult, summarizeTrace } from './lib/metrics.js';
+export { measure, delta, buildResult, summarizeTrace, summarizeStructure } from './lib/metrics.js';
 export { diffWords, diffStats } from './lib/diff.js';
 
 // Individual analyzers, for callers that want one number rather than a run

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import api, { ApiError } from './lib/api.js';
 import localHistory from './lib/localHistory.js';
 import { paraphraseLocally, analyzeLocally, localPresets } from './lib/engine.js';
-import { toMarkdown, toPlainText, toJson, buildResult } from '@humaninzer/engine';
+import { toMarkdown, toPlainText, toJson, buildResult, summarizeStructure } from '@humaninzer/engine';
 import { watchConnectivity } from './lib/registerSW.js';
 import { Squiggle } from './components/Sketch.jsx';
 import InputArea from './components/InputArea.jsx';
@@ -123,6 +123,38 @@ export default function App() {
 
       // Compute here: instant, and unaffected by the network.
       const result = paraphraseLocally(text, engineOptions);
+
+      // A second pass with a different seed, offered as a genuine alternative
+      // for comparison -- same options, same meaning, a different construction
+      // where the rules had more than one equally good way to say it. The full
+      // trace/plan/passes are kept, not just the text, so promoting it later
+      // (useAlternative) carries its own "Why" and structural note rather than
+      // inheriting the primary result's.
+      //
+      // Not every input has a genuine second option: the seed only moves the
+      // pick among near-tied candidates (see SWAP_EPSILON in the engine), and
+      // plenty of sentences have none. Attaching an "alternative" that reads
+      // identically to the primary would be worse than showing nothing, so
+      // it's only kept when it actually differs -- trying a few seeds first
+      // rather than settling for a same-text "alternative".
+      let alternative = null;
+      for (let attempt = 1; attempt <= 4 && !alternative; attempt++) {
+        const altSeed = (engineOptions.seed + attempt * 104729) >>> 0; // large prime steps, kept clear of the primary seed
+        const candidate = paraphraseLocally(text, { ...engineOptions, seed: altSeed });
+        if (candidate.paraphrased !== result.paraphrased) {
+          alternative = {
+            paraphrased: candidate.paraphrased,
+            structuralNote: candidate.structuralNote,
+            trace: candidate.trace,
+            plan: candidate.plan,
+            passes: candidate.passes,
+            engine: candidate.engine,
+            seed: altSeed,
+          };
+        }
+      }
+      result.alternative = alternative;
+
       setResult(result);
 
       // Stored locally first, so an interrupted request cannot lose the run.
@@ -174,6 +206,19 @@ export default function App() {
       if (!prev) return prev;
       const rebuilt = buildResult({ original: prev.original, paraphrased: newText, engineResult: prev });
       return { ...prev, ...rebuilt };
+    });
+  }, []);
+
+  // Promotes the alternative phrasing to the main result -- unlike a manual
+  // edit, this carries its own trace and structural note along with it,
+  // since it came from the engine rather than from typing. The alternative
+  // slot is cleared rather than refilled: a fresh one comes from the next
+  // Rewrite/Summarize click, which already re-derives a new seed each time.
+  const useAlternative = useCallback(() => {
+    setResult((prev) => {
+      if (!prev?.alternative) return prev;
+      const rebuilt = buildResult({ original: prev.original, paraphrased: prev.alternative.paraphrased, engineResult: prev.alternative });
+      return { ...prev, ...rebuilt, alternative: null };
     });
   }, []);
 
@@ -313,7 +358,13 @@ export default function App() {
             />
           </div>
 
-          <OutputCard result={result} onExport={exportResult} onEditResult={updateResultText} busy={busy} />
+          <OutputCard
+            result={result}
+            onExport={exportResult}
+            onEditResult={updateResultText}
+            onUseAlternative={useAlternative}
+            busy={busy}
+          />
         </div>
       </main>
     </div>
@@ -338,6 +389,10 @@ function toResultShape(run) {
     diff: run.diff || { segments: [], stats: null },
     trace: run.trace || [],
     traceSummary: run.traceSummary || [],
+    // Runs stored before this feature existed have no structuralNote of their
+    // own; derive it from the trace they already have rather than showing
+    // nothing.
+    structuralNote: run.structuralNote || summarizeStructure(run.trace || []),
     plan: run.plan,
     passes: run.passes || [],
     engine: run.engine || run.options?.engine,

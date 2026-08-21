@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { FileDown, RotateCcw } from 'lucide-react';
+import { ArrowRightLeft, FileDown, RotateCcw } from 'lucide-react';
 import CopyButton from './CopyButton.jsx';
 import DiffView from './DiffView.jsx';
 import TracePanel from './TracePanel.jsx';
 import MetricsDisplay from './MetricsDisplay.jsx';
 import Loader from './Loader.jsx';
 import { Thumbtack } from './Sketch.jsx';
-import { sketchPill } from '../lib/sketch.js';
+import { sketchCard, sketchPill } from '../lib/sketch.js';
 
 // How long to wait after the last keystroke before re-deriving metrics and
 // the diff against the edited text. Short enough to feel live, long enough
@@ -27,7 +27,7 @@ const TABS = [
  * Tabs are a real tablist with roving focus so the panel is navigable by
  * keyboard, and the output text is always the default view.
  */
-export default function OutputCard({ result, onExport, onEditResult, busy }) {
+export default function OutputCard({ result, onExport, onEditResult, onUseAlternative, busy }) {
   const [tab, setTab] = useState('output');
 
   // Identifies "this is a new run" without relying on result.id, which starts
@@ -173,6 +173,37 @@ export default function OutputCard({ result, onExport, onEditResult, busy }) {
             <p className="text-base" style={{ color: 'var(--ink-muted)' }}>
               {draft.length.toLocaleString()} characters - click in to edit or add your own text
             </p>
+
+            {!edited && result.structuralNote && (
+              <p className="sketch-card p-3 text-base" style={sketchCard(0)}>
+                <strong style={{ fontFamily: 'Kalam, cursive' }}>Structural changes: </strong>
+                {result.structuralNote}
+              </p>
+            )}
+
+            {!edited && result.alternative && (
+              <div className="sketch-card flex flex-col gap-2 p-4" style={sketchCard(1)}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <strong style={{ fontFamily: 'Kalam, cursive' }}>Alternative phrasing</strong>
+                  <button
+                    type="button"
+                    onClick={onUseAlternative}
+                    className="sketch-btn sketch-btn--sm sketch-btn--secondary"
+                    title="Swap this in as the main rewrite"
+                  >
+                    <ArrowRightLeft size={16} strokeWidth={2.5} aria-hidden="true" />
+                    Use this instead
+                  </button>
+                </div>
+                <p className="whitespace-pre-wrap text-lg leading-relaxed">{result.alternative.paraphrased}</p>
+                {result.alternative.structuralNote && (
+                  <p className="text-base" style={{ color: 'var(--ink-muted)' }}>
+                    {result.alternative.structuralNote}
+                  </p>
+                )}
+              </div>
+            )}
+
             <hr className="sketch-divider" />
             <MetricsDisplay
               before={result.metrics.before}

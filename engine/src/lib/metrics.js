@@ -91,6 +91,7 @@ export function buildResult({ original, paraphrased, engineResult }) {
     diff: { segments, stats: diffStats(segments) },
     trace: engineResult.trace,
     traceSummary: summarizeTrace(engineResult.trace),
+    structuralNote: summarizeStructure(engineResult.trace),
     plan: engineResult.plan,
     passes: engineResult.passes,
     engine: engineResult.engine,
@@ -110,6 +111,49 @@ export function summarizeTrace(trace = []) {
     byRule.set(entry.rule, current);
   }
   return [...byRule.values()].sort((a, b) => b.count - a.count);
+}
+
+// Rules that change how the sentence is built -- voice, order, clause
+// grouping -- as opposed to which words fill it. An editor asked "what
+// structurally changed" is asking about this set, not the vocabulary swaps
+// already itemized in the trace.
+const STRUCTURAL_RULES = new Set(['voice', 'split', 'join', 'discourse']);
+
+/**
+ * A short editorial-style note on structural changes only: voice, sentence
+ * splitting/joining, clause order. Vocabulary swaps (synonym, phrase,
+ * register, contraction, intensifier, hedge) are deliberately excluded --
+ * those are itemized in full in the trace, and mixing the two would bury the
+ * structural signal under a much longer list of word substitutions.
+ */
+export function summarizeStructure(trace = []) {
+  const counts = { voice: 0, split: 0, join: 0, discourse: 0 };
+  for (const entry of trace) {
+    if (STRUCTURAL_RULES.has(entry.rule)) counts[entry.rule]++;
+  }
+
+  const parts = [];
+  if (counts.voice) {
+    parts.push(`${counts.voice} passive ${plural(counts.voice, 'clause')} rewritten as active voice`);
+  }
+  if (counts.split) {
+    parts.push(`${counts.split} long ${plural(counts.split, 'sentence')} split into two`);
+  }
+  if (counts.join) {
+    parts.push(`${counts.join} short ${plural(counts.join, 'sentence')} merged with its neighbor`);
+  }
+  if (counts.discourse) {
+    parts.push(`${counts.discourse} connecting ${plural(counts.discourse, 'word', 'words')} swapped for register`);
+  }
+
+  if (!parts.length) return 'No structural changes -- edits were vocabulary-level only.';
+  const sentence = `${parts.join('; ')}.`;
+  return sentence.charAt(0).toUpperCase() + sentence.slice(1);
+}
+
+function plural(n, singular, irregularPlural) {
+  if (n === 1) return singular;
+  return irregularPlural || `${singular}s`;
 }
 
 function round(n) {

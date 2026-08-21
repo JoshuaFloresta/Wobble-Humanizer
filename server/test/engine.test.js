@@ -5,7 +5,7 @@ import { paraphrase, TONE_IDS } from '@humaninzer/engine';
 import { computeReadability } from '@humaninzer/engine/nlp/readability.js';
 import { analyzeTone } from '@humaninzer/engine/nlp/tone.js';
 import { diffWords, diffStats } from '@humaninzer/engine/lib/diff.js';
-import { buildResult } from '@humaninzer/engine/lib/metrics.js';
+import { buildResult, summarizeStructure } from '@humaninzer/engine/lib/metrics.js';
 
 const WORDY = 'It should be noted that the team utilized a large number of different tools '
   + 'in order to facilitate the migration. The results were reviewed by the board, and it '
@@ -186,6 +186,25 @@ test('buildResult reports before, after and delta together', () => {
     result.metrics.after.readability.counts.words - result.metrics.before.readability.counts.words,
   );
   assert.ok(result.traceSummary.length > 0);
+  assert.equal(typeof result.structuralNote, 'string');
+});
+
+test('the structural note names voice and sentence-order changes, not vocabulary', () => {
+  const withVoice = paraphrase('The report was reviewed by the board.', { tone: 'concise' });
+  assert.match(summarizeStructure(withVoice.trace), /active voice/);
+
+  const longSentence = paraphrase(
+    'The team shipped the feature on time, and the board was pleased with the outcome, so everyone celebrated the win together.',
+    { tone: 'concise', readabilityTarget: 'simple' },
+  );
+  if (longSentence.trace.some((e) => e.rule === 'split')) {
+    assert.match(summarizeStructure(longSentence.trace), /split into two/);
+  }
+
+  const synonymOnly = [{ rule: 'synonym', reason: 'x', from: 'use', to: 'utilize' }];
+  assert.equal(summarizeStructure(synonymOnly), 'No structural changes -- edits were vocabulary-level only.');
+
+  assert.equal(summarizeStructure([]), 'No structural changes -- edits were vocabulary-level only.');
 });
 
 test('phrasal passives convert with their particle', () => {
