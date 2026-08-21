@@ -107,6 +107,19 @@ export const TONE_PRESETS = [
     sentenceTarget: 15,
     gradeBias: -2,
   },
+  {
+    id: 'fluency',
+    label: 'Fluency',
+    description: 'Smooths the prose without changing register: active voice, natural contractions, hedging cleared, wordiness cut.',
+    register: 0,
+    goals: ['concise', 'direct'],
+    contractions: 'contract',
+    hedges: 'strip',
+    intensifiers: 'collapse',
+    voice: 'active',
+    sentenceTarget: 16,
+    gradeBias: -1,
+  },
 ];
 
 export const TONE_IDS = TONE_PRESETS.map((t) => t.id);

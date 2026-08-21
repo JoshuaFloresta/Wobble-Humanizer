@@ -33,7 +33,7 @@ export const HEDGES = [
   'roughly', 'approximately', 'more or less', 'kind of', 'sort of',
   'a bit', 'a little', 'in some ways', 'to some extent', 'in general',
   'it seems', 'it appears', 'i think', 'i believe', 'i feel', 'i guess',
-  'i suppose', 'we believe', 'one might argue', 'it could be argued',
+  'i suppose', 'we believe', 'we think', 'one might argue', 'it could be argued',
 ];
 
 /** Hedging verbs and modals, counted separately because they carry more weight. */

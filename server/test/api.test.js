@@ -1,6 +1,7 @@
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../src/app.js';
+import { TONE_IDS } from '@humaninzer/engine';
 
 /**
  * API tests run against the real Express app on an ephemeral port with no
@@ -36,7 +37,7 @@ test('GET /health reports status and capabilities', async () => {
 
 test('GET /presets serves the tone and target tables', async () => {
   const body = await (await fetch(`${base}/presets`)).json();
-  assert.equal(body.tones.length, 7);
+  assert.equal(body.tones.length, TONE_IDS.length);
   assert.equal(body.readabilityTargets.length, 5);
   assert.ok(body.limits.maxInputChars > 0);
 });

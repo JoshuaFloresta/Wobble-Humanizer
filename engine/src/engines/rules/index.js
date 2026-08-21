@@ -99,6 +99,62 @@ const LEXICAL_RULES = [
 ];
 
 /**
+ * Split a block into the lines the author actually wrote.
+ *
+ * A textarea never inserts a newline of its own -- soft wrapping is visual --
+ * so every \n reaching the engine was typed or pasted, and a list, address or
+ * stanza depends on keeping it exactly. Earlier this also tried to guess when
+ * a line was a hard-wrapped sentence fragment and merge it with the next; that
+ * heuristic fired on ordinary unpunctuated lines too (a plain list, notes
+ * without periods) and mashed them together, so it has been removed --
+ * every line the author typed comes back as its own line.
+ */
+function splitLines(block) {
+  return block.split('\n');
+}
+
+// Indentation and list markers are structure, not prose. They are lifted off
+// before the rules run and put back afterwards, so a bulleted list survives as
+// a bulleted list instead of being tidied into a paragraph.
+const LINE_PREFIX = /^([ \t]*(?:(?:[-*•·–—]|\d+[.)]|[a-z][.)])[ \t]+)?)/i;
+
+function splitPrefix(line) {
+  const prefix = (line.match(LINE_PREFIX) || ['', ''])[1];
+  return { prefix, body: line.slice(prefix.length) };
+}
+
+/**
+ * Rewrite one block, line by line.
+ *
+ * Each line is rewritten as its own unit so the break between them survives;
+ * joining and splitting therefore never reach across a line the author chose
+ * to end.
+ * @returns {{text:string, ops:object[]}}
+ */
+function rewriteBlock(block, plan, ctx) {
+  const ops = [];
+  const rewritten = splitLines(block).map((line) => {
+    if (!line.trim()) return line;
+    const { prefix, body } = splitPrefix(line);
+    if (!body.trim()) return line;
+
+    const result = rewriteParagraph(body, plan, ctx);
+    for (const o of result.ops) ops.push(o);
+
+    let text = result.text;
+    // cleanupRule closes every sentence with a terminal mark, which is right
+    // for prose but turns an unpunctuated list item into a false sentence.
+    // If the author's line carried no terminal mark, the added one comes off.
+    if (prefix.trim() && !/[.!?:;]["'”’)\]]?$/.test(body.replace(/[ \t]+$/, ''))) {
+      text = text.replace(/\.$/, '');
+    }
+    return prefix + text;
+  });
+
+  return { text: rewritten.join('\n'), ops };
+}
+
+/**
  * Rewrite one paragraph.
  * @returns {{text:string, ops:object[]}}
  */
@@ -185,22 +241,25 @@ export function paraphrase(text, options = {}) {
     sentenceIndex: 0,
   };
 
-  const paragraphs = input.split(/\n[ \t]*\n/);
+  // Captured so the gaps survive: even indices are text blocks, odd indices
+  // are the blank-line separators between them, restored verbatim on the way
+  // out rather than normalized to a bare \n\n.
+  const segments = input.split(/(\n[ \t]*\n)/);
   const trace = [];
   const passes = [];
-  let working = paragraphs;
+  let working = segments;
   let activePlan = plan;
 
   for (let pass = 0; pass < MAX_PASSES; pass++) {
     const passOps = [];
-    working = working.map((paragraph, pIndex) => {
-      if (!paragraph.trim()) return paragraph;
-      const result = rewriteParagraph(paragraph, activePlan, ctx);
-      for (const o of result.ops) passOps.push({ ...o, pass, paragraph: pIndex });
+    working = working.map((segment, index) => {
+      if (index % 2 === 1 || !segment.trim()) return segment;
+      const result = rewriteBlock(segment, activePlan, ctx);
+      for (const o of result.ops) passOps.push({ ...o, pass, paragraph: index >> 1 });
       return result.text;
     });
 
-    const joined = working.join('\n\n');
+    const joined = working.join('');
     const measured = computeReadability(joined);
     const grade = measured.summary ? measured.summary.consensusGrade : currentGrade;
 
@@ -225,7 +284,7 @@ export function paraphrase(text, options = {}) {
   }
 
   return {
-    output: working.join('\n\n').trim(),
+    output: working.join('').trim(),
     trace,
     plan: serializePlan(activePlan),
     passes,

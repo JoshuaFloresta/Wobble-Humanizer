@@ -41,7 +41,7 @@ Object.defineProperty(globalThis, 'navigator', {
 const { paraphraseLocally, analyzeLocally, localPresets } = await import(
   pathToFileURL(path.join(root, 'src', 'lib', 'engine.js')).href
 );
-const { paraphrase, buildResult } = await import('@humaninzer/engine');
+const { paraphrase, buildResult, TONE_IDS } = await import('@humaninzer/engine');
 
 const TEXT = 'It should be noted that the results were reviewed by the board, and it was '
   + 'determined that the outcome was very good. The team shipped the change in March. '
@@ -57,7 +57,7 @@ const check = async (label, fn) => {
 
 await check('presets available with no network', () => {
   const presets = localPresets();
-  assert.equal(presets.tones.length, 7);
+  assert.equal(presets.tones.length, TONE_IDS.length);
   assert.equal(presets.readabilityTargets.length, 5);
 });
 
@@ -75,7 +75,7 @@ await check('metrics work with no network', () => {
 });
 
 await check('browser output is byte-identical to server output', () => {
-  for (const tone of ['neutral', 'formal', 'casual', 'concise', 'persuasive', 'academic', 'friendly']) {
+  for (const tone of TONE_IDS) {
     const browser = paraphraseLocally(TEXT, { tone });
     const engineResult = paraphrase(TEXT, { tone });
     const server = buildResult({ original: TEXT, paraphrased: engineResult.output, engineResult });

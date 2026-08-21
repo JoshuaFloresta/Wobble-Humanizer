@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { paraphrase } from '@humaninzer/engine';
+import { paraphrase, TONE_IDS } from '@humaninzer/engine';
 import { computeReadability } from '@humaninzer/engine/nlp/readability.js';
 import { analyzeTone } from '@humaninzer/engine/nlp/tone.js';
 import { diffWords, diffStats } from '@humaninzer/engine/lib/diff.js';
@@ -26,7 +26,7 @@ test('an explicit seed reproduces its own output', () => {
 });
 
 test('every tone preset produces output and a trace', () => {
-  for (const tone of ['neutral', 'formal', 'casual', 'concise', 'persuasive', 'academic', 'friendly']) {
+  for (const tone of TONE_IDS) {
     const result = paraphrase(WORDY, { tone });
     assert.ok(result.output.length > 0, `${tone} produced no output`);
     assert.ok(result.trace.length > 0, `${tone} produced no edits`);
@@ -106,6 +106,66 @@ test('paragraph structure survives a rewrite', () => {
   const text = 'It should be noted that this is the first paragraph.\n\nIn order to be clear, this is the second.';
   const result = paraphrase(text, { tone: 'concise' });
   assert.equal(result.output.split(/\n\n/).length, 2);
+});
+
+test('a hard line break between sentences survives a rewrite', () => {
+  const text = 'It should be noted that this is the first line.\n'
+    + 'In order to be clear, this is the second.\n'
+    + 'A large number of lines must all survive.';
+  const output = paraphrase(text, { tone: 'concise' }).output;
+  assert.equal(output.split('\n').length, 3, `lines collapsed: ${JSON.stringify(output)}`);
+});
+
+test('list markers and indentation survive a rewrite', () => {
+  const text = 'Here is the plan:\n'
+    + '- We need to utilize the new process\n'
+    + '- The team will facilitate a review\n'
+    + '1. Obtain the required approvals';
+  const lines = paraphrase(text, { tone: 'concise' }).output.split('\n');
+
+  assert.equal(lines.length, 4);
+  // The lead-in already ends in a colon and must not collect a second mark.
+  assert.equal(lines[0], 'Here is the plan:');
+  assert.ok(lines[1].startsWith('- '), `lost bullet: ${lines[1]}`);
+  assert.ok(lines[2].startsWith('- '), `lost bullet: ${lines[2]}`);
+  assert.ok(lines[3].startsWith('1. '), `lost numbering: ${lines[3]}`);
+  // An unpunctuated list item stays unpunctuated rather than becoming a sentence.
+  assert.ok(!lines[1].endsWith('.'), `list item gained a period: ${lines[1]}`);
+});
+
+// A guessed "hard-wrap rejoin" heuristic used to live here: it merged a line
+// with no terminal punctuation into the next when that next line started in
+// lower case. It fired on ordinary unpunctuated lists and notes just as often
+// as on genuinely wrapped text, mashing separate lines into one run-on -- and
+// once mashed together, a line ending and the next line starting with the
+// same word read as a doubled word. Every line is now kept exactly as typed,
+// with no guessing about the author's intent.
+test('lines without terminal punctuation are kept separate, never merged', () => {
+  const text = 'The team completed the migration last week\n'
+    + 'they reviewed the results carefully\n'
+    + 'the manager approved the final report';
+  const output = paraphrase(text, { tone: 'concise' }).output;
+  assert.equal(output.split('\n').length, 3, `lines were merged: ${JSON.stringify(output)}`);
+});
+
+test('a plain list without bullet markers is not collapsed into one line', () => {
+  const text = 'Shopping list\nmilk and eggs\nbread and butter\ncoffee beans';
+  const output = paraphrase(text, { tone: 'concise' }).output;
+  assert.equal(output.split('\n').length, 4, `list lines were merged: ${JSON.stringify(output)}`);
+});
+
+// Only the pronoun is pinned: which verb the synonym rule lands on is a
+// seeded choice among equally-ranked candidates, so asserting the whole
+// sentence would make this a test of the RNG rather than of pronoun case.
+test('a pronoun subject takes object case when a passive is made active', () => {
+  const cases = [
+    ['It was reviewed by the board.', /^The board \w+ it\.$/],
+    ['They were notified by the manager.', /^The manager \w+ them\.$/],
+    ['She was assisted by the team.', /^The team \w+ her\.$/],
+  ];
+  for (const [input, expected] of cases) {
+    assert.match(paraphrase(input, { tone: 'concise' }).output, expected);
+  }
 });
 
 test('word diff aligns on tokens', () => {

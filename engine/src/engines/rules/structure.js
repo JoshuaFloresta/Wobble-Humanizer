@@ -43,6 +43,11 @@ const CLAUSE_MARKERS = new Set(['and', 'but', 'so', 'which', 'while', 'that', 'w
 
 const PLURAL_AGENTS = new Set(['they', 'we', 'people', 'others', 'users', 'members', 'teams']);
 
+// Subject form -> object form, for the pronoun promoted out of a passive.
+const OBJECT_PRONOUNS = {
+  i: 'me', we: 'us', he: 'him', she: 'her', they: 'them', it: 'it', you: 'you',
+};
+
 /**
  * Rule 8: passive to active.
  *
@@ -109,7 +114,10 @@ export function voiceRule(sentence, plan) {
     else verb = base;
 
     if (particle) verb = `${verb} ${particle.text}`;
-    const object = subject.replace(/^(The|A|An)\s/, (m) => m.toLowerCase());
+    // The subject becomes the object, so a pronoun has to change case with it:
+    // "It was reviewed by the board" is "The board reviewed it", never "It".
+    const object = OBJECT_PRONOUNS[subject.toLowerCase()]
+      || subject.replace(/^(The|A|An)\s/, (m) => m.toLowerCase());
     const rewritten = tidy(`${matchCase(subject, agent)} ${verb} ${object}${tail}`) + terminal;
 
     return {
@@ -216,6 +224,8 @@ export function cleanupRule(sentence) {
     .replace(/\s+/g, ' ')
     .replace(/\ba\s+([aeiou])/gi, (m, v) => m.replace(/^([Aa])\s/, '$1n '))
     .replace(/\ban\s+([^aeiou\s])/gi, (m) => m.replace(/^([Aa])n\s/, '$1 '));
-  if (text && !/[.!?]["')\]]?$/.test(text)) text += '.';
+  // A colon or semicolon already closes the line -- a lead-in such as
+  // "Here is the plan:" must not pick up a second mark and become "plan:.".
+  if (text && !/[.!?:;]["'”’)\]]?$/.test(text)) text += '.';
   return { text, ops: text === sentence ? [] : [op('cleanup', 'Normalized spacing, articles and punctuation', sentence, text)] };
 }
